@@ -1,0 +1,6 @@
+__pycache__
+secrets
+*.pyc
+*.log
+*.yml
+*~

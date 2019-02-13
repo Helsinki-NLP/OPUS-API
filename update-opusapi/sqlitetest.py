@@ -18,7 +18,7 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def create_opusfile(conn, opusfile):
-    sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size) VALUES(?,?,?,?,?,?,?)'''
+    sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, latest) VALUES(?,?,?,?,?,?,?,?)'''
     cur = conn.cursor()
     cur.execute(sql, opusfile)
     conn.commit()
@@ -37,7 +37,8 @@ def main():
     alignment_pairs integer,
     source_tokens integer,
     target_tokens integer,
-    size integer
+    size integer,
+    latest text
     );'''
     
     conn = create_connection("opusdata.db")

@@ -13,13 +13,18 @@ url = ""
 conn = st.create_connection("opusdata.db")
 cur = conn.cursor()
 
+latest = ""
+
 oid=0
 for line in f:
     '''
 for i in range(500):
     line = f.readline()
-    print(line)
-    '''
+    #print(line)
+    #'''
+    oid += 1
+
+    origLine = line
     line = line.strip()
     line = line.split(" ")
     if line[0] == "" or line[0] == "total":
@@ -28,15 +33,27 @@ for i in range(500):
     if line[0][-1] == ":":
         url = line[0][:-1]+"/"
 
-    if len(line) == 2 and line[0][-1] != ":" and line[1][-1] != "/":
+    if len(line) >= 2 and line[0][-1] != ":" and line[-1][-1] != "/":
         #print(url, end=" ")
+        if " latest -> " in origLine:
+            latest = line[-1]
 
-        m = re.search("/proj/nlpl/data/OPUS/(.*?)/(.*?)/(.*?)/(.*?)$", url+line[1])
+        m = re.search("/proj/nlpl/data/OPUS/(.*?)/(.*?)/(.*?)/(.*?)$", url+line[-1])
         if m:
             corpus = m.group(1)
             version = m.group(2)
             preprocessing = m.group(3)
+            if preprocessing == "info":
+                continue
             rest = m.group(4)
+            if "Makefile" in rest:
+                continue
+            #print(corpus, version, preprocessing, rest)
+                
+            if version == latest:
+                isLatest = "True"
+            else:
+                isLatest = "False"
 
             sourceandtarget = False
 
@@ -74,7 +91,7 @@ for i in range(500):
                 errornum += 1
 
             #print(corpus, version, preprocessing, source, target)
-            link = url+line[1]
+            link = url+line[-1]
             link = link.replace("/proj/nlpl/data/OPUS/", "")
 
 
@@ -84,11 +101,11 @@ for i in range(500):
                 if len(numbers) < 4:
                     #print(link)
                     numbers = ["","","",""]
-                opusfile = (source, target, corpus, preprocessing, version, link, line[0], numbers[0].strip(), numbers[1].strip(), numbers[2].strip(), numbers[3].strip())
-                sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens) VALUES(?,?,?,?,?,?,?,?,?,?,?)'''
+                opusfile = (source, target, corpus, preprocessing, version, link, line[0], numbers[0].strip(), numbers[1].strip(), numbers[2].strip(), numbers[3].strip(), isLatest)
+                sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens, latest) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)'''
             else:
-                opusfile = (source, target, corpus, preprocessing, version, link, line[0], numbers[0].strip(), numbers[1].strip(), numbers[2].strip())
-                sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens) VALUES(?,?,?,?,?,?,?,?,?,?)'''
+                opusfile = (source, target, corpus, preprocessing, version, link, line[0], numbers[0].strip(), numbers[1].strip(), numbers[2].strip(), isLatest)
+                sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, latest) VALUES(?,?,?,?,?,?,?,?,?,?,?)'''
                 
 
             cur.execute(sql, opusfile)
@@ -105,8 +122,8 @@ for i in range(500):
 
     if oid % 100 == 0:
         print(oid, "lines processed,", errornum, "errors encountered", end="\r")
-    oid += 1
 
+print(oid, "lines processed,", errornum, "errors encountered", end="\r")
 print("\nopusdata.db created! Check 'opusdata_error.log' for errors.\n")
 errorlog.close()
 f.close()

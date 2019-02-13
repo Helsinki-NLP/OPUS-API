@@ -76,7 +76,8 @@ def opusapi():
 
     sql_command, params = make_sql_command(parameters, direction)
     if sql_command == "SELECT * FROM opusfile":
-        sql_command = sql_command + " LIMIT 10"
+        #sql_command = sql_command + " LIMIT 10"
+        return render_template("opusapi.html")
 
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command, params)

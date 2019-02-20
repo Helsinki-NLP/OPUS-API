@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, jsonify
 from sqlalchemy import create_engine
+import os
 
 app = Flask(__name__)
 
-opusapi_connection = create_engine('sqlite:////var/www/opusdata.db')
+opusapi_connection = create_engine('sqlite:///'+os.environ["OPUSAPI_DB"])
     
 def make_sql_command(parameters, direction):
     sql_command = "SELECT * FROM opusfile WHERE "

@@ -49,7 +49,17 @@ def opusEntry(keys, values):
     entry = dict(zip(tuple(keys), values))
     entry["url"] = "https://object.pouta.csc.fi/OPUS-"+entry["url"]
     return entry
-    
+
+def getLanguages(sou):
+    print(sou)
+    if sou == "":
+        sql_command = "SELECT DISTINCT source FROM opusfile ORDER BY source"
+    else:
+        sql_command = "SELECT source FROM opusfile WHERE target='"+sou+"' AND source!='"+sou+"' UNION SELECT target FROM opusfile WHERE source='"+sou+"' AND target!='' AND target!='"+sou+"';"
+    conn = opusapi_connection.connect()
+    query = conn.execute(sql_command)
+    return jsonify(languages=[i[0] for i in query.cursor])
+   
 @app.route('/')
 def opusapi():
     source = request.args.get('source', '#EMPTY#', type=str)
@@ -76,9 +86,12 @@ def opusapi():
                   ("latest", latest)]
 
     sql_command, params = make_sql_command(parameters, direction)
-    if sql_command == "SELECT * FROM opusfile":
-        #sql_command = sql_command + " LIMIT 10"
-        return render_template("opusapi.html")
+
+    #if sql_command == "SELECT * FROM opusfile":
+    if params == () and source == "#EMPTY#":
+        return getLanguages("")
+    elif params == () and source != "#EMPTY":
+        return getLanguages(source)
 
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command, params)

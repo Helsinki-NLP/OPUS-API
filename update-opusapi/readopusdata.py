@@ -81,6 +81,9 @@ for i in range(500):
                     infopath = "/proj/nlpl/data/OPUS/{0}/{1}/info/{2}-{3}{4}.info".format(corpus, version, source, target, altstr)
                     sourceandtarget = True
 
+            if source in ["", "*", "logfiles"]:
+                continue
+
             numbers = ["","","",""]
 
             try:

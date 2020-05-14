@@ -100,8 +100,10 @@ def opusapi():
 
     if languages:
         return getLanguages(sou=source, cor=corpus)
-    if corpora or params == ():
+    if corpora:
         return getCorpora()
+    if params == ():
+        return render_template('opusapi.html')
 
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command, params)
@@ -109,7 +111,3 @@ def opusapi():
     ret = [opusEntry(query.keys(), i) for i in query.cursor]
 
     return jsonify(corpora=ret)
-
-@app.route('/help')
-def help():
-    return render_template('opusapi.html')

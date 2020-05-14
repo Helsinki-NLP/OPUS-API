@@ -8,7 +8,28 @@
 
 <body>
 <h1>OPUS-API</h1>
-<p>Use parameters <code>corpus</code>, <code>source</code>, <code>target</code>, <code>preprocessing</code> and <code>version</code> to search for corpora. Set <code>version</code> to <code>latest</code> to get the latest version. For example: <a href="http://opus.nlpl.eu/opusapi/?corpus=OpenSubtitles&source=en&target=fi&preprocessing=xml&version=latest">http://opus.nlpl.eu/opusapi/?corpus=OpenSubtitles&source=en&target=fi&preprocessing=xml&version=latest</a>
+<p>Use parameters <code>corpus</code>, <code>source</code>, <code>target</code>, <code>preprocessing</code> and <code>version</code> to search for corpora. Set <code>version</code> to <code>latest</code> to get the latest version. For example: <br><br>
+<a href="http://opus.nlpl.eu/opusapi/?corpus=OpenSubtitles&source=en&target=fi&preprocessing=xml&version=latest">http://opus.nlpl.eu/opusapi/?corpus=OpenSubtitles&source=en&target=fi&preprocessing=xml&version=latest</a>
+<br><br>
+List available copora:
+<br><br>
+<a href="http://opus.nlpl.eu/opusapi/?corpora=True">http://opus.nlpl.eu/opusapi/?corpora=True</a>
+<br><br>
+List available languages:
+<br><br>
+<a href="http://opus.nlpl.eu/opusapi/?languages=True">http://opus.nlpl.eu/opusapi/?languages=True</a>
+<br><br>
+List available languages for a corpus:
+<br><br>
+<a href="http://opus.nlpl.eu/opusapi/?languages=True&corpus=OpenSubtitles">http://opus.nlpl.eu/opusapi/?languages=True&corpus=OpenSubtitles</a>
+<br><br>
+List available target languages for a source language:
+<br><br>
+<a href="http://opus.nlpl.eu/opusapi/?languages=True&source=fi">http://opus.nlpl.eu/opusapi/?languages=True&source=fi</a>
+<br><br>
+List available target languages for a source language in a corpus:
+<br><br>
+<a href="http://opus.nlpl.eu/opusapi/?languages=True&corpus=OpenSubtitles&source=fi">http://opus.nlpl.eu/opusapi/?languages=True&corpus=OpenSubtitles&source=fi</a>
 </p>
 </body>
 

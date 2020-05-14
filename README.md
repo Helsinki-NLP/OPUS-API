@@ -4,7 +4,7 @@
 
 Clone this git:
 
-`git clone https://github.com/miau1/OPUS-API.git`
+`git clone https://github.com/Helsinki-NLP/OPUS-API.git`
 
 Create a virtual environment and install required packages:
 

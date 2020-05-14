@@ -50,15 +50,24 @@ def opusEntry(keys, values):
     entry["url"] = "https://object.pouta.csc.fi/OPUS-"+entry["url"]
     return entry
 
-def getLanguages(sou):
-    print(sou)
-    if sou == "":
+def getLanguages(sou, cor):
+    if sou == "#EMPTY#" and cor == "#EMPTY#":
         sql_command = "SELECT DISTINCT source FROM opusfile ORDER BY source"
-    else:
+    elif sou != "#EMPTY#" and cor == "#EMPTY#":
         sql_command = "SELECT source FROM opusfile WHERE target='"+sou+"' AND source!='"+sou+"' UNION SELECT target FROM opusfile WHERE source='"+sou+"' AND target!='' AND target!='"+sou+"';"
+    elif sou == "#EMPTY#" and cor != "#EMPTY#":
+        sql_command = "SELECT source FROM opusfile WHERE corpus='"+cor+"' UNION SELECT target FROM opusfile WHERE corpus='"+cor+"' AND target!='""';"
+    elif sou != "#EMPTY" and cor != "#EMPTY#":
+        sql_command = "SELECT source FROM opusfile WHERE corpus='"+cor+"' AND target='"+sou+"' AND source!='"+sou+"' UNION SELECT target FROM opusfile WHERE corpus='"+cor+"' AND source='"+sou+"' AND target!='' AND target!='"+sou+"';"
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command)
     return jsonify(languages=[i[0] for i in query.cursor])
+
+def getCorpora():
+    sql_command = "SELECT DISTINCT corpus FROM opusfile ORDER BY corpus"
+    conn = opusapi_connection.connect()
+    query = conn.execute(sql_command)
+    return jsonify(corpora=[i[0] for i in query.cursor])
    
 @app.route('/')
 def opusapi():
@@ -67,6 +76,8 @@ def opusapi():
     corpus = request.args.get('corpus', '#EMPTY#', type=str)
     preprocessing = request.args.get('preprocessing', '#EMPTY#', type=str)
     version = request.args.get('version', '#EMPTY#', type=str)
+    languages = request.args.get('languages', False, type=bool)
+    corpora = request.args.get('corpora', False, type=bool)
 
     sou_tar = [source, target]
     sou_tar.sort()
@@ -87,11 +98,10 @@ def opusapi():
 
     sql_command, params = make_sql_command(parameters, direction)
 
-    #if sql_command == "SELECT * FROM opusfile":
-    if params == () and source == "#EMPTY#":
-        return getLanguages("")
-    elif params == () and source != "#EMPTY":
-        return getLanguages(source)
+    if languages:
+        return getLanguages(sou=source, cor=corpus)
+    if corpora or params == ():
+        return getCorpora()
 
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command, params)
@@ -100,3 +110,6 @@ def opusapi():
 
     return jsonify(corpora=ret)
 
+@app.route('/help')
+def help():
+    return render_template('opusapi.html')

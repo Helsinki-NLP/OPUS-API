@@ -46,6 +46,13 @@ Update your apache configuration file (located at `/etc/apache2/sites-available/
 # vim: syntax=apache ts=4 sw=4 sts=4 sr noet
 ```
 
+Set environment variables in `/etc/apache2/envvars`
+
+```
+export OPUSAPI_PATH=/home/cloud-user/OPUS-API
+export OPUSAPI_DB=/home/cloud-user/OPUS-API/opusdata.db
+```
+
 Restart apache2 server:
 
 `sudo systemctl restart apache2`

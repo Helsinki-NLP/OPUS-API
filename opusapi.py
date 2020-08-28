@@ -61,7 +61,7 @@ def getLanguages(sou, cor):
         sql_command = "SELECT source FROM opusfile WHERE corpus='"+cor+"' AND target='"+sou+"' AND source!='"+sou+"' UNION SELECT target FROM opusfile WHERE corpus='"+cor+"' AND source='"+sou+"' AND target!='' AND target!='"+sou+"';"
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command)
-    return jsonify(languages=[i[0] for i in query.cursor])
+    return [i[0] for i in query.cursor]
 
 def getCorpora(sou, tar):
     if sou == "#EMPTY#" and tar == "#EMPTY#":
@@ -72,7 +72,25 @@ def getCorpora(sou, tar):
         sql_command = "SELECT DISTINCT corpus FROM opusfile WHERE source='"+sou+"' AND target='"+tar+"' ORDER BY corpus"
     conn = opusapi_connection.connect()
     query = conn.execute(sql_command)
-    return jsonify(corpora=[i[0] for i in query.cursor])
+    return [i[0] for i in query.cursor]
+
+def submitCommand(sql_command, params, direction):
+    conn = opusapi_connection.connect()
+    query = conn.execute(sql_command, params)
+
+    ret = [opusEntry(query.keys(), i) for i in query.cursor]
+    if direction:
+        found_corp = set()
+        for entry in ret:
+            if entry['source'] != '' and entry['target'] != '':
+                found_corp.add(entry['corpus'])
+        new_ret = []
+        for entry in ret:
+            if entry['corpus'] in found_corp:
+                new_ret.append(entry)
+        ret = new_ret
+
+    return ret
    
 @app.route('/')
 def opusapi():
@@ -104,25 +122,13 @@ def opusapi():
     sql_command, params = make_sql_command(parameters, direction)
 
     if languages:
-        return getLanguages(sou=sou_tar[0], cor=corpus)
+        return jsonify(languages=getLanguages(sou=sou_tar[0], cor=corpus))
     if corpora:
-        return getCorpora(sou_tar[0], sou_tar[1])
+        return jsonify(corpora=getCorpora(sou_tar[0], sou_tar[1]))
     if params == ():
         return render_template('opusapi.html')
 
-    conn = opusapi_connection.connect()
-    query = conn.execute(sql_command, params)
-
-    ret = [opusEntry(query.keys(), i) for i in query.cursor]
-    if direction:
-        new_ret = []
-        found_corp = set()
-        for entry in ret:
-            if entry['source'] != '' and entry['target'] != '':
-                found_corp.add(entry['corpus'])
-                new_ret.append(entry)
-            elif entry['corpus'] in found_corp:
-                new_ret.append(entry)
-        ret = new_ret
+    print(sql_command, params)
+    ret = submitCommand(sql_command, params, direction)
 
     return jsonify(corpora=ret)

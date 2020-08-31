@@ -32,8 +32,11 @@ def make_sql_command(parameters, direction):
     sql_command = sql_command.strip().split(" ")
     sql_command = " ".join(sql_command[:-1])
 
-    if direction and parameters[3][1] not in ["dic", "moses", "smt", "xml", "tmx", "wordalign"]:
-        sql_command += " UNION SELECT * FROM opusfile WHERE source='"+so+"' AND target='"+ta+"' AND "        
+    if parameters[3][1] not in ["dic", "moses", "smt", "xml", "tmx", "wordalign", "mono"]:
+        if direction:
+            sql_command += " UNION SELECT * FROM opusfile WHERE source='"+so+"' AND target='"+ta+"' AND "        
+        else:
+            sql_command += " UNION SELECT * FROM opusfile WHERE ((source='"+so+"' AND target!='') OR (source!='' AND target='"+so+"')) AND "        
         for i in parameters:
             if i[0] == "preprocessing":
                 sql_command += "preprocessing='xml' AND "
@@ -91,6 +94,28 @@ def submitCommand(sql_command, params, direction):
         ret = new_ret
 
     return ret
+
+def addRelatedMonoData(ret, parameters):
+    languages = set()
+    ret_param = []
+    for i in ret:
+        if i['source'] != parameters[0][1]:
+            languages.add(i['source'])
+        if i['target'] != '' and i['target'] != parameters[0][1]:
+            languages.add(i['target'])
+    lang_comm = " OR ".join(["source='"+lan+"'" for lan in languages])
+    sql_command = "SELECT * FROM opusfile WHERE ("+lang_comm+") AND target='' AND "        
+    for i in parameters[2:]:
+        if i[1] != "#EMPTY#":
+            sql_command += i[0] + "= ? AND "
+            ret_param.append(i[1])
+    sql_command = sql_command.strip().split(" ")
+    sql_command = " ".join(sql_command[:-1])
+
+    conn = opusapi_connection.connect()
+    query = conn.execute(sql_command, ret_param)
+
+    return ret + [opusEntry(query.keys(), i) for i in query.cursor]
    
 @app.route('/')
 def opusapi():
@@ -119,16 +144,18 @@ def opusapi():
                   ("preprocessing", preprocessing), ("version", version), 
                   ("latest", latest)]
 
-    sql_command, params = make_sql_command(parameters, direction)
+    sql_command, params = make_sql_command(parameters.copy(), direction)
 
     if languages:
-        return jsonify(languages=getLanguages(sou=sou_tar[0], cor=corpus))
+        return jsonify(languages=getLanguages(sou_tar[0], corpus))
     if corpora:
         return jsonify(corpora=getCorpora(sou_tar[0], sou_tar[1]))
     if params == ():
         return render_template('opusapi.html')
 
-    print(sql_command, params)
     ret = submitCommand(sql_command, params, direction)
+
+    if len(ret)>0 and not direction and preprocessing in ["xml", "raw", "#EMPTY#"]:
+        ret = addRelatedMonoData(ret, parameters)
 
     return jsonify(corpora=ret)

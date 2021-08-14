@@ -93,7 +93,7 @@ for line in corpora:
                     # url = "https://object.pouta.csc.fi/OPUS-{}/{}".format(corpus_name, item_path)
                     url = "{}/{}".format(corpus_name, item_path)
                     # size = m.group(1)
-                    size = int(int(m.group(1))/1000)
+                    size = int(int(m.group(1))/1024)
                     documents, alignment_pairs, source_tokens, target_tokens = get_item_info(source, target, preprocessing, info_dict, corpus_name)
                     if version == latest:
                         isLatest = 'True'

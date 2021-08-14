@@ -52,7 +52,7 @@ def get_item_info(src, trg, prepro, info_dict, corpus_name):
         elif src not in ("", "README"):
             r_i = info_dict[src] + [""]
     except Exception as e:
-        error_log.write("Info not found for \"{} {} {} {}\"\n\n".format(corpus_name, src, trg, prepro))
+        error_log.write("Info not found for \"{} {} {} {}\"\n".format(corpus_name, src, trg, prepro))
         return "","","",""
     return r_i[0], r_i[1], r_i[2], r_i[3]
 
@@ -76,9 +76,11 @@ for line in corpora:
         prev_corpus_name = corpus_name
         latest = get_latest_version(corpus_name)
         info_dict = get_info_dict(corpus_name)
-        index = read_url("{}/{}/{}".format(URL_BASE, corpus_name, "index-long.txt"))
+        # index = read_url("{}/{}/{}".format(URL_BASE, corpus_name, "index-long.txt"))
+        index = read_url("{}/{}/{}".format(URL_BASE, corpus_name, "index-filesize.txt"))
         for item in index:
-            m = re.search("^\s*(.*?) .*? .*? (.*?)$", item)
+            # m = re.search("^\s*(.*?) .*? .*? (.*?)$", item)
+            m = re.search("^\s*(.*?) (.*?)$", item)
             if m:
                 item_path = m.group(2)
                 m2 = re.search("^(.*?)/(.*?)/(.*?)(/|$)", item_path)
@@ -88,10 +90,15 @@ for line in corpora:
                     corpus = corpus_name
                     preprocessing = m2.group(2)
                     version = m2.group(1)
-                    url = "https://object.pouta.csc.fi/OPUS-{}/{}".format(corpus_name, item_path)
+                    # url = "https://object.pouta.csc.fi/OPUS-{}/{}".format(corpus_name, item_path)
+                    url = "{}/{}".format(corpus_name, item_path)
                     size = m.group(1)
                     documents, alignment_pairs, source_tokens, target_tokens = get_item_info(source, target, preprocessing, info_dict, corpus_name)
-                    isLatest = version == latest
+                    if version == latest:
+                        isLatest = 'True'
+                    else:
+                        isLatest = 'False'
+                        # isLatest = version == latest
 
                     opusfile = (source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens, isLatest)
 

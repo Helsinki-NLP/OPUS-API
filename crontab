@@ -1,0 +1,1 @@
+00 02 * * 6	/var/www/OPUS-API/update_db_with_backup.sh > /var/www/OPUS-API/update_db.log 2>&1

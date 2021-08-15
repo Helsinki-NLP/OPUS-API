@@ -8,15 +8,16 @@ def read_url(url):
     return urllib.request.urlopen(url).read().decode("utf-8").split("\n")
 
 def get_languages(languages_raw):
-    if languages_raw == "README":
-        return "", ""
-    m = re.search("^(.*?)(\.|$)", languages_raw)
-    if m:
-        languages = m.group(1).split("-")
-    if len(languages) == 2:
-        return languages[0], languages[1]
-    else:
-        return languages[0], ""
+    m0 = re.search("^[a-z]{2,3}([_\-\.]|$)", languages_raw)
+    if m0:
+        m = re.search("^(.*?)(\.|$)", languages_raw)
+        if m:
+            languages = m.group(1).split("-")
+            if len(languages) == 2:
+                return languages[0], languages[1]
+            else:
+                return languages[0], ""
+    return "", ""
 
 def get_latest_version(corpus_name):
     latest = ""
@@ -87,6 +88,8 @@ for line in corpora:
                 if m2:
                     languages_raw = m2.group(3)
                     source, target = get_languages(languages_raw)
+                    if source == "":
+                        continue
                     corpus = corpus_name
                     preprocessing = m2.group(2)
                     version = m2.group(1)

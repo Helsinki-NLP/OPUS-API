@@ -32,7 +32,7 @@ def make_sql_command(parameters, direction):
     sql_command = sql_command.strip().split(" ")
     sql_command = " ".join(sql_command[:-1])
 
-    if parameters[3][1] not in ["dic", "moses", "smt", "xml", "tmx", "wordalign", "mono"]:
+    if parameters[3][1] in ["raw", "parsed"]:
         if direction:
             sql_command += " UNION SELECT * FROM opusfile WHERE source='"+so+"' AND target='"+ta+"' AND "        
         else:
@@ -155,7 +155,7 @@ def opusapi():
 
     ret = submitCommand(sql_command, params, direction)
 
-    if len(ret)>0 and not direction and preprocessing in ["xml", "raw", "#EMPTY#"]:
+    if len(ret)>0 and not direction and preprocessing in ["xml", "raw", "parsed", "#EMPTY#"]:
         ret = addRelatedMonoData(ret, parameters)
 
     return jsonify(corpora=ret)

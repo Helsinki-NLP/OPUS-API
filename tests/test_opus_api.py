@@ -94,23 +94,23 @@ class TestOpusApi(unittest.TestCase):
 
     def test_list_all_corpora(self):
         corpora = getCorpora('#EMPTY#', '#EMPTY#')
-        self.assertEqual(len(corpora), 45)
+        self.assertEqual(len(corpora), 226)
 
     def test_list_corpora_one_lan(self):
         corpora = getCorpora('fi', '#EMPTY#')
-        self.assertEqual(len(corpora), 17)
+        self.assertEqual(len(corpora), 41)
 
     def test_list_corpora_two_lan(self):
         corpora = getCorpora('en', 'fi')
-        self.assertEqual(len(corpora), 16)
+        self.assertEqual(len(corpora), 38)
 
     def test_list_all_languages(self):
         languages = getLanguages('#EMPTY#', '#EMPTY#')
-        self.assertEqual(len(languages), 339)
+        self.assertEqual(len(languages), 712)
 
     def test_list_languages_one_lan(self):
         languages = getLanguages('zh', '#EMPTY#')
-        self.assertEqual(len(languages), 92)
+        self.assertEqual(len(languages), 246)
 
     def test_list_languages_one_corp(self):
         languages = getLanguages('#EMPTY#', 'RF')

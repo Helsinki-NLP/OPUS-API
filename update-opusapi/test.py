@@ -34,35 +34,43 @@ def execute_sql(cur, opusfile):
     cur.execute(sql, opusfile)
 
 def get_lang_info(name, data, data_type):
+        source, target, documents, alignment_pairs, source_tokens, target_tokens = '', '', '', '', '', ''
         source, target = name, ''
         if data_type == 'bitexts':
             source, target = name.split('-')
-        documents = ''
-        if data_type in ['bitexts', 'monolingual']:
-            documents = data['files']
-        if data_type in ['bitexts', 'moses']:
-            alignment_pairs = data['alignments']
-        elif data_type == 'tmx':
-            alignment_pairs = data['translation units']
-        elif data_type == 'monolingual':
-            alignment_pairs = data['sentences']
-        if data_type == 'monolingual':
-            source_tokens = data['tokens']
-            target_tokens = ''
-        else:
-            source_tokens = data['source language tokens']
-            target_tokens = data['target language tokens']
+        try:
+            documents = ''
+            if data_type in ['bitexts', 'monolingual']:
+                documents = data['files']
+            if data_type in ['bitexts', 'moses']:
+                alignment_pairs = data['alignments']
+            elif data_type == 'tmx':
+                alignment_pairs = data['translation units']
+            elif data_type == 'monolingual':
+                alignment_pairs = data['sentences']
+            if data_type == 'monolingual':
+                source_tokens = data['tokens']
+                target_tokens = ''
+            else:
+                source_tokens = data['source language tokens']
+                target_tokens = data['target language tokens']
+        except KeyError:
+            print("MISSING ITEMS")#, name, data)
 
         return source, target, documents, alignment_pairs, source_tokens, target_tokens
 
 def get_size_url_prep(data, data_type):
-    if data_type in ['tmx', 'moses']:
-        size = int(int(data['download size'])/1024)
-        url = data['download url']
-    elif data_type in ['bitexts', 'monolingual']:
-        size = int(int(data['size'])/1024)
-        url = data['url']
-    preprocessing = url.split('/')[-2]
+    size, url, preprocessing = '','',''
+    try:
+        if data_type in ['tmx', 'moses']:
+            size = int(int(data['download size'])/1024)
+            url = data['download url']
+        elif data_type in ['bitexts', 'monolingual']:
+            size = int(int(data['size'])/1024)
+            url = data['url']
+        preprocessing = url.split('/')[-2]
+    except KeyError:
+        print("MISSING ITEMS")
 
     return size, url, preprocessing
 
@@ -107,14 +115,26 @@ def main():
     URL_BASE = 'https://raw.githubusercontent.com/Helsinki-NLP/OPUS/main/corpus/'
     index_info = read_url(URL_BASE + 'index-info.txt')
 
-    i = 0
+    conti = True
     for info in index_info:
+        if info == "ELRC-785-Compendium_Social_In/info.yaml":
+            conti = False
         info_s = info.split('/')
+        if conti: continue
         if len(info_s) == 2:
-            gen_info = read_url_yaml(URL_BASE + info)
-            corpus = gen_info['name']
-            i += i
-            if i == 3: break
+            try:
+                gen_info = read_url_yaml(URL_BASE + info)
+            except yaml.reader.ReaderError:
+                print("INVALID YAML", URL_BASE + info)
+                continue
+            except urllib.error.HTTPError:
+                print("INVALID URL", URL_BASE + info)
+                continue
+            try:
+                corpus = gen_info['name']
+            except KeyError:
+                print("MISSING NAME", info)#, gen_info)
+                continue
             print(f'Processing corpus {corpus}')
             latest_v = gen_info['latest release']
         elif len(info_s) == 3:
@@ -124,10 +144,15 @@ def main():
                 latest = 'True'
             stats = info.replace('info', 'statistics')
             corpus_data = read_url_yaml(URL_BASE + stats)
-            get_bitext_entries(corpus, version, latest, corpus_data['bitexts'], cur)
-            get_monolingual_entries(corpus, version, latest, corpus_data['monolingual'], cur)
-            get_moses_entries(corpus, version, latest, corpus_data['moses'], cur)
-            get_tmx_entries(corpus, version, latest, corpus_data['tmx'], cur)
+            try:
+                get_bitext_entries(corpus, version, latest, corpus_data['bitexts'], cur)
+                get_monolingual_entries(corpus, version, latest, corpus_data['monolingual'], cur)
+                get_moses_entries(corpus, version, latest, corpus_data['moses'], cur)
+                get_tmx_entries(corpus, version, latest, corpus_data['tmx'], cur)
+            except TypeError:
+                print("INVALID corpus_data", corpus)#, corpus_data)
+            except KeyError:
+                print("MISSING SUB DATA", corpus)
 
     con.commit()
     con.close()

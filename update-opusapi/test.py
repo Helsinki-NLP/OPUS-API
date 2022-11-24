@@ -2,6 +2,7 @@ import urllib.request
 import yaml
 import re
 import sqlite3
+import logging
 
 def read_url(url):
     return urllib.request.urlopen(url).read().decode('utf-8').split('\n')
@@ -34,43 +35,73 @@ def execute_sql(cur, opusfile):
     cur.execute(sql, opusfile)
 
 def get_lang_info(name, data, data_type):
-        source, target, documents, alignment_pairs, source_tokens, target_tokens = '', '', '', '', '', ''
-        source, target = name, ''
-        if data_type == 'bitexts':
-            source, target = name.split('-')
-        try:
-            documents = ''
-            if data_type in ['bitexts', 'monolingual']:
-                documents = data['files']
-            if data_type in ['bitexts', 'moses']:
-                alignment_pairs = data['alignments']
-            elif data_type == 'tmx':
-                alignment_pairs = data['translation units']
-            elif data_type == 'monolingual':
-                alignment_pairs = data['sentences']
-            if data_type == 'monolingual':
-                source_tokens = data['tokens']
-                target_tokens = ''
-            else:
-                source_tokens = data['source language tokens']
-                target_tokens = data['target language tokens']
-        except KeyError:
-            print("MISSING ITEMS")#, name, data)
+    source, target, documents, alignment_pairs, source_tokens, target_tokens = '', '', '', '', '', ''
+    source = name
+    if data_type == 'bitexts':
+        names = name.split('-')
+        if len(names) != 2:
+            logging.warning(f'{data_type}: cannot split name "{name}" into two language codes')
+        else:
+            source, target = names
+    documents = ''
+    if data_type in ['bitexts', 'monolingual']:
+        data['files']
+        documents = data.get('files', '')
+        if documents == '':
+            logging.warning(f'{data_type} is missing "files"')
+    if data_type in ['bitexts', 'moses']:
+        alignment_pairs = data.get('alignments', '')
+        if alignment_pairs == '':
+            logging.warning(f'{data_type} is missing "alignments"')
+    elif data_type == 'tmx':
+        alignment_pairs = data.get('translation units', '')
+        if alignment_pairs == '':
+            logging.warning(f'{data_type} is missing "translation units"')
+    elif data_type == 'monolingual':
+        alignment_pairs = data.get('sentences', '')
+        if alignment_pairs == '':
+            logging.warning(f'{data_type} is missing "sentences"')
+    if data_type == 'monolingual':
+        source_tokens = data.get('tokens', '')
+        if source_tokens == '':
+            logging.warning(f'{data_type} is missing "tokens"')
+        target_tokens = ''
+    else:
+        source_tokens = data.get('source language tokens')
+        if source_tokens == '':
+            logging.warning(f'{data_type} is missing "source language tokens"')
+        target_tokens = data.get('target language tokens')
+        if target_tokens == '':
+            logging.warning(f'{data_type} is missing "target language tokens"')
 
-        return source, target, documents, alignment_pairs, source_tokens, target_tokens
+    return source, target, documents, alignment_pairs, source_tokens, target_tokens
 
 def get_size_url_prep(data, data_type):
     size, url, preprocessing = '','',''
-    try:
-        if data_type in ['tmx', 'moses']:
-            size = int(int(data['download size'])/1024)
-            url = data['download url']
-        elif data_type in ['bitexts', 'monolingual']:
-            size = int(int(data['size'])/1024)
-            url = data['url']
-        preprocessing = url.split('/')[-2]
-    except KeyError:
-        print("MISSING ITEMS")
+    if data_type in ['tmx', 'moses']:
+        size = data.get('download size', '')
+        if size == '':
+            logging.warning(f'{data_type} is missing "download size"')
+        else:
+            size = int(int(size)/1024)
+        url = data.get('download url', '')
+        if url == '':
+            logging.warning(f'{data_type} is missing "download url"')
+    elif data_type in ['bitexts', 'monolingual']:
+        size = data.get('size', '')
+        if size == '':
+            logging.warning(f'{data_type} is missing "size"')
+        else:
+            size = int(int(size)/1024)
+        url = data.get('url')
+        if url == '':
+            logging.warning(f'{data_type} is missing "url"')
+
+    pre_step = url.split('/')
+    if len(pre_step) < 2:
+        logging.warning(f'{data_type}: cannot find preprocessing from {url}')
+    else:
+        preprocessing = pre_step[-2]
 
     return size, url, preprocessing
 
@@ -107,6 +138,8 @@ def get_bitext_entries(corpus, version, latest, bitexts, cur):
                 execute_sql(cur, opusfile)
 
 def main():
+    logging.basicConfig(filename='error.log', level=logging.WARNING)
+
     con = sqlite3.connect('opusdata.db')
     cur = con.cursor()
 
@@ -115,44 +148,44 @@ def main():
     URL_BASE = 'https://raw.githubusercontent.com/Helsinki-NLP/OPUS/main/corpus/'
     index_info = read_url(URL_BASE + 'index-info.txt')
 
-    conti = True
     for info in index_info:
-        if info == "ELRC-785-Compendium_Social_In/info.yaml":
-            conti = False
-        info_s = info.split('/')
-        if conti: continue
-        if len(info_s) == 2:
-            try:
-                gen_info = read_url_yaml(URL_BASE + info)
-            except yaml.reader.ReaderError:
-                print("INVALID YAML", URL_BASE + info)
-                continue
-            except urllib.error.HTTPError:
-                print("INVALID URL", URL_BASE + info)
-                continue
-            try:
-                corpus = gen_info['name']
-            except KeyError:
-                print("MISSING NAME", info)#, gen_info)
-                continue
-            print(f'Processing corpus {corpus}')
-            latest_v = gen_info['latest release']
-        elif len(info_s) == 3:
-            version = info_s[1]
-            latest = 'False'
-            if version == latest_v:
-                latest = 'True'
-            stats = info.replace('info', 'statistics')
-            corpus_data = read_url_yaml(URL_BASE + stats)
-            try:
-                get_bitext_entries(corpus, version, latest, corpus_data['bitexts'], cur)
-                get_monolingual_entries(corpus, version, latest, corpus_data['monolingual'], cur)
-                get_moses_entries(corpus, version, latest, corpus_data['moses'], cur)
-                get_tmx_entries(corpus, version, latest, corpus_data['tmx'], cur)
-            except TypeError:
-                print("INVALID corpus_data", corpus)#, corpus_data)
-            except KeyError:
-                print("MISSING SUB DATA", corpus)
+            info_s = info.split('/')
+            if len(info_s) == 2:
+                try:
+                    gen_info = read_url_yaml(URL_BASE + info)
+                except (yaml.reader.ReaderError, urllib.error.HTTPError) as e:
+                    logging.error(f'{info}, {type(e).__name__}: {e}')
+                    continue
+                corpus = gen_info.get('name')
+                if not corpus:
+                    logging.warning(f'{info}, corpus name missing')
+                print(f'Processing corpus {corpus}')
+                latest_v = gen_info.get('latest release')
+                if not latest_v:
+                    logging.warning(f'{info}, latest release missing')
+            elif len(info_s) == 3:
+                version = info_s[1]
+                latest = 'False'
+                if version == latest_v:
+                    latest = 'True'
+                stats = info.replace('info', 'statistics')
+                try:
+                    corpus_data = read_url_yaml(URL_BASE + stats)
+                except (yaml.reader.ReaderError, urllib.error.HTTPError) as e:
+                    logging.error(f'{stats}, {type(e).__name__}: {e}')
+                    continue
+
+                get_entries = {'bitexts': get_bitext_entries,
+                                'monolingual': get_monolingual_entries,
+                                'moses': get_moses_entries,
+                                'tmx': get_tmx_entries}
+
+                for item in get_entries.keys():
+                    sub_data = corpus_data.get(item)
+                if sub_data:
+                    get_entries[item](corpus, version, latest, sub_data, cur)
+                else:
+                    logging.warning(f'{info}, {item} data missing')
 
     con.commit()
     con.close()

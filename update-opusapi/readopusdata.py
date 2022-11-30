@@ -36,7 +36,7 @@ def execute_sql(cur, opusfile):
 def get_lang_info(name, data, data_type, info):
     source, target, documents, alignment_pairs, source_tokens, target_tokens = '', '', '', '', '', ''
     source = name
-    if data_type == 'bitexts':
+    if data_type in ['bitexts', 'moses', 'tmx']:
         names = name.split('-')
         if len(names) != 2:
             logging.warning(f'{info} {data_type} {name}: cannot split name "{name}" into two language codes')

@@ -1,7 +1,8 @@
 import urllib.request
-from ruamel.yaml import YAML
 import sqlite3
 import logging
+
+from ruamel.yaml import YAML, scanner
 
 def read_url(url):
     return urllib.request.urlopen(url).read().decode('utf-8').split('\n')
@@ -154,7 +155,7 @@ def main():
         if len(info_s) == 2:
             try:
                 gen_info = read_url_yaml(URL_BASE + info, yaml)
-            except (ruamel.yaml.scanner.ScannerError, urllib.error.HTTPError) as e:
+            except (scanner.ScannerError, urllib.error.HTTPError) as e:
                 logging.error(f'{info}, {type(e).__name__}: {e}')
                 continue
             corpus = gen_info.get('name')
@@ -172,7 +173,7 @@ def main():
             stats = info.replace('info.yaml', 'statistics.yaml')
             try:
                 corpus_data = read_url_yaml(URL_BASE + stats, yaml)
-            except (ruamel.yaml.scanner.ScannerError, urllib.error.HTTPError) as e:
+            except (scanner.ScannerError, urllib.error.HTTPError) as e:
                 logging.error(f'{stats}, {type(e).__name__}: {e}')
                 continue
 

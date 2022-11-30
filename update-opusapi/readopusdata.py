@@ -1,14 +1,14 @@
 import urllib.request
-import yaml
+from ruamel.yaml import YAML
 import sqlite3
 import logging
 
 def read_url(url):
     return urllib.request.urlopen(url).read().decode('utf-8').split('\n')
 
-def read_url_yaml(url):
+def read_url_yaml(url, yaml):
     raw = urllib.request.urlopen(url).read().decode('utf-8')
-    data = yaml.full_load(raw)
+    data = yaml.load(raw)
     return data
 
 def create_table(cur):
@@ -136,6 +136,8 @@ def get_bitext_entries(corpus, version, latest, bitexts, cur, info):
                 execute_sql(cur, opusfile)
 
 def main():
+    yaml = YAML()
+
     logging.basicConfig(filename='error.log', level=logging.ERROR,
             format='%(asctime)s %(levelname)s:%(name)s: %(message)s', datefmt='%x %X')
 
@@ -148,47 +150,47 @@ def main():
     index_info = read_url(URL_BASE + 'index-info.txt')
 
     for info in index_info:
-            info_s = info.split('/')
-            if len(info_s) == 2:
-                try:
-                    gen_info = read_url_yaml(URL_BASE + info)
-                except (yaml.reader.ReaderError, urllib.error.HTTPError) as e:
-                    logging.error(f'{info}, {type(e).__name__}: {e}')
-                    continue
-                corpus = gen_info.get('name')
-                if not corpus:
-                    logging.warning(f'{info}, corpus name missing')
-                print(f'Processing corpus {corpus}')
-                latest_v = gen_info.get('latest release')
-                if not latest_v:
-                    logging.warning(f'{info}, latest release missing')
-            elif len(info_s) == 3:
-                version = info_s[1]
-                latest = 'False'
-                if version == latest_v:
-                    latest = 'True'
-                stats = info.replace('info.yaml', 'statistics.yaml')
-                try:
-                    corpus_data = read_url_yaml(URL_BASE + stats)
-                except (yaml.reader.ReaderError, urllib.error.HTTPError) as e:
-                    logging.error(f'{stats}, {type(e).__name__}: {e}')
-                    continue
+        info_s = info.split('/')
+        if len(info_s) == 2:
+            try:
+                gen_info = read_url_yaml(URL_BASE + info, yaml)
+            except (ruamel.yaml.scanner.ScannerError, urllib.error.HTTPError) as e:
+                logging.error(f'{info}, {type(e).__name__}: {e}')
+                continue
+            corpus = gen_info.get('name')
+            if not corpus:
+                logging.warning(f'{info}, corpus name missing')
+            print(f'Processing corpus {corpus}')
+            latest_v = gen_info.get('latest release')
+            if not latest_v:
+                logging.warning(f'{info}, latest release missing')
+        elif len(info_s) == 3:
+            version = info_s[1]
+            latest = 'False'
+            if version == latest_v:
+                latest = 'True'
+            stats = info.replace('info.yaml', 'statistics.yaml')
+            try:
+                corpus_data = read_url_yaml(URL_BASE + stats, yaml)
+            except (ruamel.yaml.scanner.ScannerError, urllib.error.HTTPError) as e:
+                logging.error(f'{stats}, {type(e).__name__}: {e}')
+                continue
 
-                get_entries = {'bitexts': get_bitext_entries,
-                                'monolingual': get_monolingual_entries,
-                                'moses': get_moses_entries,
-                                'tmx': get_tmx_entries}
+            get_entries = {'bitexts': get_bitext_entries,
+                            'monolingual': get_monolingual_entries,
+                            'moses': get_moses_entries,
+                            'tmx': get_tmx_entries}
 
-                if not corpus_data:
-                    logging.error(f'{info}, corpus_data is empty')
-                    continue
+            if not corpus_data:
+                logging.error(f'{info}, corpus_data is empty')
+                continue
 
-                for item in get_entries.keys():
-                    sub_data = corpus_data.get(item)
-                    if sub_data:
-                        get_entries[item](corpus, version, latest, sub_data, cur, info)
-                    else:
-                        logging.warning(f'{info}, {item} data missing')
+            for item in get_entries.keys():
+                sub_data = corpus_data.get(item)
+                if sub_data:
+                    get_entries[item](corpus, version, latest, sub_data, cur, info)
+                else:
+                    logging.warning(f'{info}, {item} data missing')
 
     con.commit()
     con.close()

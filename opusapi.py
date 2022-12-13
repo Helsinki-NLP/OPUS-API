@@ -50,7 +50,7 @@ def make_sql_command(parameters, direction):
     
 def opusEntry(keys, values):
     entry = dict(zip(tuple(keys), values))
-    entry["url"] = "https://object.pouta.csc.fi/OPUS-"+entry["url"]
+    #entry["url"] = "https://object.pouta.csc.fi/OPUS-"+entry["url"]
     return entry
 
 def getLanguages(sou, cor):

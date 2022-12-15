@@ -116,6 +116,14 @@ def addRelatedMonoData(ret, parameters):
     query = conn.execute(sql_command, ret_param)
 
     return ret + [opusEntry(query.keys(), i) for i in query.cursor]
+
+def clean_up_parameters(parameters):
+    ret_param = []
+    for item in parameters:
+        value = item[1].replace('"', '')
+        value = value.replace('\'', '')
+        ret_param.append((item[0], value))
+    return ret_param
    
 @app.route('/')
 def opusapi():
@@ -144,12 +152,14 @@ def opusapi():
                   ("preprocessing", preprocessing), ("version", version), 
                   ("latest", latest)]
 
+    parameters = clean_up_parameters(parameters)
+
     sql_command, params = make_sql_command(parameters.copy(), direction)
 
     if languages:
-        return jsonify(languages=getLanguages(sou_tar[0], corpus))
+        return jsonify(languages=getLanguages(parameters[0][1], parameters[2][1]))
     if corpora:
-        return jsonify(corpora=getCorpora(sou_tar[0], sou_tar[1]))
+        return jsonify(corpora=getCorpora(parameters[0][1], parameters[1][1]))
     if params == ():
         return render_template('opusapi.html')
 

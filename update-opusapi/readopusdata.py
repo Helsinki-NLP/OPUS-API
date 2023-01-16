@@ -2,7 +2,7 @@ import urllib.request
 import sqlite3
 import logging
 
-from ruamel.yaml import YAML, scanner
+from ruamel.yaml import YAML, scanner, reader
 
 def read_url(url):
     return urllib.request.urlopen(url).read().decode('utf-8').split('\n')
@@ -155,25 +155,27 @@ def main():
         if len(info_s) == 2:
             try:
                 gen_info = read_url_yaml(URL_BASE + info, yaml)
-            except (scanner.ScannerError, urllib.error.HTTPError) as e:
+            except (scanner.ScannerError, urllib.error.HTTPError, reader.ReaderError) as e:
                 logging.error(f'{info}, {type(e).__name__}: {e}')
-                continue
+                gen_info = {}
             corpus = gen_info.get('name')
             if not corpus:
                 logging.warning(f'{info}, corpus name missing')
             print(f'Processing corpus {corpus}')
             latest_v = gen_info.get('latest release')
             if not latest_v:
-                logging.warning(f'{info}, latest release missing')
+                logging.error(f'{info}, latest release missing')
         elif len(info_s) == 3:
             version = info_s[1]
+            if not corpus:
+                corpus = info_s[0]
             latest = 'False'
             if version == latest_v:
                 latest = 'True'
             stats = info.replace('info.yaml', 'statistics.yaml')
             try:
                 corpus_data = read_url_yaml(URL_BASE + stats, yaml)
-            except (scanner.ScannerError, urllib.error.HTTPError) as e:
+            except (scanner.ScannerError, urllib.error.HTTPError, reader.ReaderError) as e:
                 logging.error(f'{stats}, {type(e).__name__}: {e}')
                 continue
 

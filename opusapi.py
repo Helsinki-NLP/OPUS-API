@@ -161,7 +161,9 @@ def opusapi():
     if corpora:
         return jsonify(corpora=getCorpora(parameters[0][1], parameters[1][1]))
     if params == ():
-        return render_template('opusapi.html')
+        #baseurl = 'http://opus.nlpl.eu/opusapi/'
+        baseurl='http://127.0.0.1:5000/'
+        return render_template('opusapi.html', baseurl=baseurl)
 
     ret = submitCommand(sql_command, params, direction)
 

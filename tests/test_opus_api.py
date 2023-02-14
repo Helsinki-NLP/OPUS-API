@@ -1,121 +1,99 @@
-from sqlalchemy import create_engine
+import sqlite3
 import unittest
 
-from opusapi import getLanguages, getCorpora, submitCommand, make_sql_command, addRelatedMonoData
+import opusapi
+from opusapi import clean_up_parameters, run_query, run_default_query, run_corpora_query, run_languages_query
 
-opusapi_connection = create_engine('sqlite:////testdata.db')
+DB_FILE = 'tests/testdata.db'
+opusapi.DB_FILE = DB_FILE
 
 class TestOpusApi(unittest.TestCase):
 
-    def test_get_specific_corpus(self):
-        params = [('source', 'en'), ('target', 'fi'), ('corpus', 'OpenSubtitles'), ('preprocessing', 'xml'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(params, True)
-        ret = submitCommand(command, params, True)
-        self.assertEqual(len(ret), 4)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'OpenSubtitles')
+    def test_get_latest_bilingual(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 320501)
 
-    def test_get_all_versions(self):
-        params = [('source', 'en'), ('target', 'fi'), ('corpus', 'OpenSubtitles'), ('preprocessing', 'xml'), ('version', '#EMPTY#'), ('latest', '#EMPTY#')]
-        command, params = make_sql_command(params, True)
-        ret = submitCommand(command, params, True)
-        self.assertEqual(len(ret), 20)
+    def test_get_all_versions_bilingual(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml'}
+        ret = run_default_query(params)
         for i in ret:
-            self.assertEqual(i['corpus'], 'OpenSubtitles')
+            self.assertTrue(i['id'] in [297875, 299782, 303016, 306498, 311401, 320501])
 
-    def test_get_specific_version(self):
-        params = [('source', 'en'), ('target', 'fi'), ('corpus', 'OpenSubtitles'), ('preprocessing', 'xml'), ('version', 'v1'), ('latest', '#EMPTY#')]
-        command, params = make_sql_command(params, True)
-        ret = submitCommand(command, params, True)
-        self.assertEqual(len(ret), 3)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'OpenSubtitles')
+    def test_get_specific_bilingual(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'version': 'v1'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 297875)
 
-    def test_get_all_preprocessings_for_latest(self):
-        params = [('source', 'en'), ('target', 'fi'), ('corpus', 'OpenSubtitles'), ('preprocessing', '#EMPTY#'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(params, True)
-        ret = submitCommand(command, params, True)
-        self.assertEqual(len(ret), 19)
+    def test_get_all_preprocessings_for_latest_bilingual(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'latest': 'True'}
+        ret = run_default_query(params)
         for i in ret:
-            self.assertEqual(i['corpus'], 'OpenSubtitles')
+            self.assertTrue(i['id'] in [320501, 320502, 320503, 320504, 326318, 328183])
 
-    def test_get_specific_preprocessing(self):
-        params = [('source', 'en'), ('target', 'fi'), ('corpus', 'OpenSubtitles'), ('preprocessing', 'raw'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(params, True)
-        ret = submitCommand(command, params, True)
-        self.assertEqual(len(ret), 4)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'OpenSubtitles')
+    def test_get_specific_preprocessing_bilingual(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'moses',  'latest': 'True'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 326318)
 
-    def test_get_specific_corpus_one_lan(self):
-        parameters = [('source', 'en'), ('target', '#EMPTY#'), ('corpus', 'RF'), ('preprocessing', 'xml'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(parameters.copy(), False)
-        ret = submitCommand(command, params, False)
-        ret = addRelatedMonoData(ret, parameters)
-        self.assertEqual(len(ret), 9)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'RF')
+    def test_get_latest_monolingual(self):
+        params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 325438)
 
-    def test_get_all_versions_one_lan(self):
-        parameters = [('source', 'en'), ('target', '#EMPTY#'), ('corpus', 'SETIMES'), ('preprocessing', 'xml'), ('version', '#EMPTY#'), ('latest', '#EMPTY#')]
-        command, params = make_sql_command(parameters.copy(), False)
-        ret = submitCommand(command, params, False)
-        ret = addRelatedMonoData(ret, parameters)
-        self.assertEqual(len(ret), 36)
+    def test_get_all_versions_monolingual(self):
+        params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml'}
+        ret = run_default_query(params)
         for i in ret:
-            self.assertEqual(i['corpus'], 'SETIMES')
+            self.assertTrue(i['id'] in [298604, 300489, 303773, 307401, 314221, 325438])
 
-    def test_get_specific_version_one_lan(self):
-        parameters = [('source', 'en'), ('target', '#EMPTY#'), ('corpus', 'SETIMES'), ('preprocessing', 'xml'), ('version', 'v1'), ('latest', '#EMPTY#')]
-        command, params = make_sql_command(parameters.copy(), False)
-        ret = submitCommand(command, params, False)
-        ret = addRelatedMonoData(ret, parameters)
-        self.assertEqual(len(ret), 17)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'SETIMES')
+    def test_get_specific_version_monolingual(self):
+        params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'version': 'v1'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 298604)
 
-    def test_get_all_preprocessings_for_latest_one_lan(self):
-        parameters = [('source', 'en'), ('target', '#EMPTY#'), ('corpus', 'RF'), ('preprocessing', '#EMPTY#'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(parameters.copy(), False)
-        ret = submitCommand(command, params, False)
-        ret = addRelatedMonoData(ret, parameters)
-        self.assertEqual(len(ret), 103)
+    def test_get_all_preprocessings_for_latest_monolingual(self):
+        params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'latest': 'True'}
+        ret = run_default_query(params)
         for i in ret:
-            self.assertEqual(i['corpus'], 'RF')
+            self.assertTrue(i['id'] in [325434, 325435, 325436, 325437, 325438, 325439])
 
-    def test_get_specific_preprocessing_one_lan(self):
-        parameters = [('source', 'en'), ('target', '#EMPTY#'), ('corpus', 'RF'), ('preprocessing', 'raw'), ('version', '#EMPTY#'), ('latest', 'True')]
-        command, params = make_sql_command(parameters.copy(), False)
-        ret = submitCommand(command, params, False)
-        ret = addRelatedMonoData(ret, parameters)
-        self.assertEqual(len(ret), 9)
-        for i in ret:
-            self.assertEqual(i['corpus'], 'RF')
+    def test_get_specific_preprocessing_monolingual(self):
+        params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'raw', 'latest': 'True'}
+        ret = run_default_query(params)
+        self.assertEqual(ret[0]['id'], 325439)
 
     def test_list_all_corpora(self):
-        corpora = getCorpora('#EMPTY#', '#EMPTY#')
-        self.assertEqual(len(corpora), 226)
+        params = {}
+        ret = run_corpora_query(params)
+        self.assertEqual(len(ret), 1172)
 
     def test_list_corpora_one_lan(self):
-        corpora = getCorpora('fi', '#EMPTY#')
-        self.assertEqual(len(corpora), 41)
+        params = {'source': 'fi'}
+        ret = run_corpora_query(params)
+        self.assertEqual(len(ret), 104)
 
     def test_list_corpora_two_lan(self):
-        corpora = getCorpora('en', 'fi')
-        self.assertEqual(len(corpora), 38)
+        params = {'source': 'en', 'target': 'fi'}
+        ret = run_corpora_query(params)
+        self.assertEqual(len(ret), 78)
 
     def test_list_all_languages(self):
-        languages = getLanguages('#EMPTY#', '#EMPTY#')
-        self.assertEqual(len(languages), 712)
+        params = {}
+        ret = run_languages_query(params)
+        self.assertEqual(len(ret), 785)
 
     def test_list_languages_one_lan(self):
-        languages = getLanguages('zh', '#EMPTY#')
-        self.assertEqual(len(languages), 246)
+        params = {'source': 'zh'}
+        ret = run_languages_query(params)
+        self.assertEqual(len(ret), 248)
 
     def test_list_languages_one_corp(self):
-        languages = getLanguages('#EMPTY#', 'RF')
-        self.assertEqual(len(languages), 5)
+        params = {'corpus': 'RF'}
+        ret = run_languages_query(params)
+        self.assertEqual(len(ret), 5)
 
     def test_list_languages_one_lan_one_corp(self):
-        languages = getLanguages('sv', 'RF')
-        self.assertEqual(len(languages), 4)
+        params = {'corpus': 'RF', 'source': 'sv'}
+        ret = run_languages_query(params)
+        self.assertEqual(len(ret), 4)

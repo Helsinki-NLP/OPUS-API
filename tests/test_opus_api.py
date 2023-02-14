@@ -12,81 +12,81 @@ class TestOpusApi(unittest.TestCase):
     def test_get_latest_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 320501)
+        self.assertEqual(ret[0]['id'], 136272)
 
     def test_get_all_versions_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml'}
         ret = run_default_query(params)
         for i in ret:
-            self.assertTrue(i['id'] in [297875, 299782, 303016, 306498, 311401, 320501])
+            self.assertTrue(i['id'] in [112278, 112934, 114221, 115588, 123919, 123920, 136272, 136273])
 
     def test_get_specific_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'version': 'v1'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 297875)
+        self.assertEqual(ret[0]['id'], 112278)
 
     def test_get_all_preprocessings_for_latest_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'latest': 'True'}
         ret = run_default_query(params)
         for i in ret:
-            self.assertTrue(i['id'] in [320501, 320502, 320503, 320504, 326318, 328183])
+            self.assertTrue(i['id'] in [126145, 128126, 130626, 130627, 133658, 136272, 136273])
 
     def test_get_specific_preprocessing_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'moses',  'latest': 'True'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 326318)
+        self.assertEqual(ret[0]['id'], 128126)
 
     def test_get_latest_monolingual(self):
         params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 325438)
+        self.assertEqual(ret[0]['id'], 136362)
 
     def test_get_all_versions_monolingual(self):
         params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml'}
         ret = run_default_query(params)
         for i in ret:
-            self.assertTrue(i['id'] in [298604, 300489, 303773, 307401, 314221, 325438])
+            self.assertTrue(i['id'] in [112299, 112972, 114258, 115629, 123968, 136362])
 
     def test_get_specific_version_monolingual(self):
         params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'version': 'v1'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 298604)
+        self.assertEqual(ret[0]['id'], 112299)
 
     def test_get_all_preprocessings_for_latest_monolingual(self):
         params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'latest': 'True'}
         ret = run_default_query(params)
         for i in ret:
-            self.assertTrue(i['id'] in [325434, 325435, 325436, 325437, 325438, 325439])
+            self.assertTrue(i['id'] in [127362, 127435, 127436, 129380, 129423, 136362])
 
     def test_get_specific_preprocessing_monolingual(self):
         params = {'source': 'en', 'target': '', 'corpus': 'OpenSubtitles', 'preprocessing': 'raw', 'latest': 'True'}
         ret = run_default_query(params)
-        self.assertEqual(ret[0]['id'], 325439)
+        self.assertEqual(ret[0]['id'], 129423)
 
     def test_list_all_corpora(self):
         params = {}
         ret = run_corpora_query(params)
-        self.assertEqual(len(ret), 1172)
+        self.assertEqual(len(ret), 45)
 
     def test_list_corpora_one_lan(self):
         params = {'source': 'fi'}
         ret = run_corpora_query(params)
-        self.assertEqual(len(ret), 104)
+        self.assertEqual(len(ret), 17)
 
     def test_list_corpora_two_lan(self):
         params = {'source': 'en', 'target': 'fi'}
         ret = run_corpora_query(params)
-        self.assertEqual(len(ret), 78)
+        self.assertEqual(len(ret), 16)
 
     def test_list_all_languages(self):
         params = {}
         ret = run_languages_query(params)
-        self.assertEqual(len(ret), 785)
+        self.assertEqual(len(ret), 339)
 
     def test_list_languages_one_lan(self):
         params = {'source': 'zh'}
         ret = run_languages_query(params)
-        self.assertEqual(len(ret), 248)
+        self.assertEqual(len(ret), 93)
 
     def test_list_languages_one_corp(self):
         params = {'corpus': 'RF'}

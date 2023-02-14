@@ -1,13 +1,13 @@
 import sqlite3
 import unittest
 
-import opusapi
-from opusapi import clean_up_parameters, run_query, run_default_query, run_corpora_query, run_languages_query
+import db_operations
+from db_operations import clean_up_parameters, run_query, run_default_query, run_corpora_query, run_languages_query, get_corpora
 
 DB_FILE = 'tests/testdata.db'
-opusapi.DB_FILE = DB_FILE
+db_operations.DB_FILE = DB_FILE
 
-class TestOpusApi(unittest.TestCase):
+class TestDbOperations(unittest.TestCase):
 
     def test_get_latest_bilingual(self):
         params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
@@ -64,36 +64,59 @@ class TestOpusApi(unittest.TestCase):
         self.assertEqual(ret[0]['id'], 129423)
 
     def test_list_all_corpora(self):
-        params = {}
+        params = {'corpora': 'true'}
         ret = run_corpora_query(params)
         self.assertEqual(len(ret), 45)
 
     def test_list_corpora_one_lan(self):
-        params = {'source': 'fi'}
+        params = {'corpora': 'true', 'source': 'fi'}
         ret = run_corpora_query(params)
         self.assertEqual(len(ret), 17)
 
     def test_list_corpora_two_lan(self):
-        params = {'source': 'en', 'target': 'fi'}
+        params = {'corpora': 'true', 'source': 'en', 'target': 'fi'}
         ret = run_corpora_query(params)
         self.assertEqual(len(ret), 16)
 
     def test_list_all_languages(self):
-        params = {}
+        params = {'languages': 'true'}
         ret = run_languages_query(params)
         self.assertEqual(len(ret), 339)
 
     def test_list_languages_one_lan(self):
-        params = {'source': 'zh'}
+        params = {'languages': 'true', 'source': 'zh'}
         ret = run_languages_query(params)
         self.assertEqual(len(ret), 93)
 
     def test_list_languages_one_corp(self):
-        params = {'corpus': 'RF'}
+        params = {'languages': 'true', 'corpus': 'RF'}
         ret = run_languages_query(params)
         self.assertEqual(len(ret), 5)
 
     def test_list_languages_one_lan_one_corp(self):
-        params = {'corpus': 'RF', 'source': 'sv'}
+        params = {'languages': 'true', 'corpus': 'RF', 'source': 'sv'}
         ret = run_languages_query(params)
         self.assertEqual(len(ret), 4)
+
+    def test_corpus_xml(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'xml', 'latest': 'True'}
+        ret = get_corpora(params)
+        for i in ret:
+            self.assertTrue(i['id'] in [136272, 136273, 136943, 136362])
+
+    def test_corpus_raw(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'raw', 'latest': 'True'}
+        ret = get_corpora(params)
+        for i in ret:
+            self.assertTrue(i['id'] in [136272, 136273, 129423, 129429])
+
+    def test_corpus_moses(self):
+        params = {'source': 'en', 'target': 'fi', 'corpus': 'OpenSubtitles', 'preprocessing': 'moses', 'latest': 'True'}
+        ret = get_corpora(params)
+        self.assertEqual(ret[0]['id'], 128126)
+
+    def test_corpus_xml_no_target(self):
+        params = {'source': 'en', 'corpus': 'RF', 'preprocessing': 'xml', 'latest': 'True'}
+        ret = get_corpora(params)
+        for i in ret:
+            self.assertTrue(i['id'] in [140747, 140748, 140749, 140756, 140755, 140753, 140750])

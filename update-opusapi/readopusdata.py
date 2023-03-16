@@ -26,13 +26,24 @@ def create_table(cur):
     alignment_pairs integer,
     source_tokens integer,
     target_tokens integer,
-    latest text
+    latest text,
+    updated integer
     );'''
     cur.execute(create_opusfile_table)
 
 def execute_sql(cur, opusfile):
-    sql = '''INSERT INTO opusfile(source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens, latest) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)'''
-    cur.execute(sql, opusfile)
+    columns = ['source', 'target', 'corpus', 'preprocessing', 'version', 'url', 'size', 'documents', 'alignment_pairs', 'source_tokens', 'target_tokens', 'latest']
+    wheres = [f'{columns[i]}="{opusfile[i]}"' for i in range(5)]
+    #sql = f'SELECT * FROM opusfile WHERE {" AND ".join(wheres)}'
+    sql = f'SELECT * FROM opusfile WHERE url="{opusfile[5]}"'
+    res = cur.execute(sql).fetchall()
+    if len(res) == 1:
+        sets = [f'{columns[i]}="{opusfile[i]}"' for i in range(5, len(columns))]
+        sql = f'UPDATE opusfile SET {", ".join(sets)}, updated=1 WHERE id={res[0][0]}'
+        cur.execute(sql)
+    elif len(res) == 0:
+        sql = f'INSERT INTO opusfile({", ".join(columns)}, updated) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1)'
+        cur.execute(sql, opusfile)
 
 def get_lang_info(name, data, data_type, info):
     source, target, documents, alignment_pairs, source_tokens, target_tokens = '', '', '', '', '', ''
@@ -136,6 +147,12 @@ def get_bitext_entries(corpus, version, latest, bitexts, cur, info):
                 opusfile = (source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens, latest)
                 execute_sql(cur, opusfile)
 
+def remove_missing_items(cur, value):
+    sql = 'DELETE FROM opusfile WHERE updated=0';
+    cur.execute(sql)
+    sql = 'UPDATE opusfile SET updated=0';
+    cur.execute(sql)
+
 def main():
     yaml = YAML()
 
@@ -194,6 +211,8 @@ def main():
                     get_entries[item](corpus, version, latest, sub_data, cur, info)
                 else:
                     logging.warning(f'{info}, {item} data missing')
+
+    remove_missing_items(cur, 0)
 
     con.commit()
     con.close()

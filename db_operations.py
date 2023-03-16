@@ -26,8 +26,9 @@ def run_query(sql_command):
     return keys, value_list
 
 def run_default_query(parameters, suffix=''):
+    columns = ['alignment_pairs', 'corpus', 'documents', 'id', 'latest', 'preprocessing', 'size', 'source', 'source_tokens', 'target', 'target_tokens', 'url', 'version']
     parameters = sort_source_target(parameters)
-    sql_command = 'SELECT * FROM opusfile WHERE '+' AND '.join([f'{k} = "{v}"' for k, v in parameters.items()]) + suffix
+    sql_command = f'SELECT {", ".join(columns)} FROM opusfile WHERE '+' AND '.join([f'{k} = "{v}"' for k, v in parameters.items()]) + suffix
     keys, value_list = run_query(sql_command)
     ret = [{k: v for k, v in zip(keys,values)} for values in value_list]
     return ret

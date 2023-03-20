@@ -30,10 +30,12 @@ def create_table(cur):
     updated integer
     );'''
     cur.execute(create_opusfile_table)
+    create_url_index = 'CREATE INDEX IF NOT EXISTS idx_url ON opusfile(url)'
+    cur.execute(create_url_index)
 
 def execute_sql(cur, opusfile):
     columns = ['source', 'target', 'corpus', 'preprocessing', 'version', 'url', 'size', 'documents', 'alignment_pairs', 'source_tokens', 'target_tokens', 'latest']
-    wheres = [f'{columns[i]}="{opusfile[i]}"' for i in range(6)]
+    #wheres = [f'{columns[i]}="{opusfile[i]}"' for i in range(6)]
     #sql = f'SELECT * FROM opusfile WHERE {" AND ".join(wheres)}'
     sql = f'SELECT * FROM opusfile WHERE url="{opusfile[5]}"'
     res = cur.execute(sql).fetchall()
@@ -147,17 +149,11 @@ def get_bitext_entries(corpus, version, latest, bitexts, cur, info):
                 opusfile = (source, target, corpus, preprocessing, version, url, size, documents, alignment_pairs, source_tokens, target_tokens, latest)
                 execute_sql(cur, opusfile)
 
-def remove_missing_items(cur, value):
+def remove_missing_items(cur):
     sql = 'DELETE FROM opusfile WHERE updated=0'
     cur.execute(sql)
     sql = 'UPDATE opusfile SET updated=0'
     cur.execute(sql)
-
-def make_url_index(cur):
-    create_url_index = 'DROP INDEX IF EXISTS idx_url'
-    cur.execute(create_url_index)
-    create_url_index = 'CREATE INDEX idx_url ON opusfile(url)'
-    cur.execute(create_url_index)
 
 def main():
     yaml = YAML()
@@ -218,13 +214,10 @@ def main():
                 else:
                     logging.warning(f'{info}, {item} data missing')
 
-    remove_missing_items(cur, 0)
-    make_url_index(cur)
+    remove_missing_items(cur)
 
     con.commit()
     con.close()
 
 if __name__ == "__main__":
     main()
-    #import cProfile
-    #cProfile.run('main()')

@@ -13,8 +13,8 @@ def opusapi():
     parameters = dbo.clean_up_parameters(parameters)
 
     if len(parameters) == 0:
-        #baseurl = 'http://opus.nlpl.eu/opusapi/'
-        baseurl='http://127.0.0.1:5000/'
+        baseurl = 'http://opus.nlpl.eu/opusapi/'
+        #baseurl='http://127.0.0.1:5000/'
         return render_template('opusapi.html', baseurl=baseurl)
 
     if 'corpora' in parameters.keys():

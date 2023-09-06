@@ -1,4 +1,4 @@
 Flask==2.2.2
 ruamel.yaml==0.17.21
 SQLAlchemy==1.4.44
-opustools==1.5.3
+opustools==1.5.5

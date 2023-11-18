@@ -8,7 +8,7 @@ mv opusdata.db $bu_name
 
 echo -e "\nCreating opusdata.db ..."
 
-python3 readopusdata.py
+opus_get --update --database opusdata.db --suppress_prompts # --warnings
 
 echo -e "\nopusdata.db created"
 
